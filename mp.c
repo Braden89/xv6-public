@@ -96,6 +96,11 @@ mpconfig(struct mp **pmp)
   }
   if(conf->version != 1 && conf->version != 4)
     return 0;
+  conf = (struct mpconf *)(mp->physaddr);
+  if (conf == NULL) {
+      panic("Failed to map MP configuration structure");
+      return;
+  }
   if(sum((uchar*)conf, conf->length) != 0)
     return 0;
   *pmp = mp;
