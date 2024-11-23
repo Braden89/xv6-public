@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "buddy.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
@@ -81,7 +82,7 @@ startothers(void)
     // Tell entryother.S what stack to use, where to enter, and what
     // pgdir to use. We cannot use kpgdir yet, because the AP processor
     // is running in low  memory, so we use entrypgdir for the APs too.
-    stack = kalloc();
+    stack = buddy_alloc(PGSIZE);
     *(void**)(code-4) = stack + KSTACKSIZE;
     *(void(**)(void))(code-8) = mpenter;
     *(int**)(code-12) = (void *) V2P(entrypgdir);

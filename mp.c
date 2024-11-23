@@ -10,6 +10,7 @@
 #include "x86.h"
 #include "mmu.h"
 #include "proc.h"
+#include <stddef.h>
 
 struct cpu cpus[NCPU];
 int ncpu;
@@ -75,11 +76,24 @@ mpconfig(struct mp **pmp)
   struct mpconf *conf;
   struct mp *mp;
 
+  mp = mpsearch();
+  if (mp == NULL || mp->physaddr == NULL) {
+      panic("Invalid MP pointer or physaddr");
+      return 0;
+  }
+  if (conf == NULL) {
+    panic("Invalid MP configuration pointer");
+    return 0;
+  }
   if((mp = mpsearch()) == 0 || mp->physaddr == 0)
     return 0;
   conf = (struct mpconf*) P2V((uint) mp->physaddr);
   if(memcmp(conf, "PCMP", 4) != 0)
     return 0;
+  if (conf == NULL) {
+    panic("Invalid MP configuration pointer");
+    return 0;
+  }
   if(conf->version != 1 && conf->version != 4)
     return 0;
   if(sum((uchar*)conf, conf->length) != 0)

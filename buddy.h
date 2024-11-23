@@ -19,9 +19,9 @@ struct free_area {
     struct list_head free_list;  // Free list for this size
 };
 
-static struct free_area free_areas[MAX_ORDER];
+extern struct free_area free_areas[MAX_ORDER];
 
-static struct spinlick buddy_lock;
+extern struct spinlick buddy_lock;
 
 #define list_first_entry(ptr, type, member) \
     ((type *)((char *)(ptr)->next - offsetof(type, member)))

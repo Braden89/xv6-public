@@ -6,7 +6,8 @@
 #include "buddy.h"
 #include <stddef.h>
 
-
+struct free_area free_areas[MAX_ORDER];  // Define here
+struct spinlock buddy_lock;              // Define here
 
 void buddyinit(void) {
     initlock(&buddy_lock, "buddy_lock");

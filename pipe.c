@@ -7,6 +7,7 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
+#include "buddy.h"
 
 #define PIPESIZE 512
 
@@ -28,7 +29,7 @@ pipealloc(struct file **f0, struct file **f1)
   *f0 = *f1 = 0;
   if((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
     goto bad;
-  if((p = (struct pipe*)kalloc()) == 0)
+  if((p = (struct pipe*)buddy_alloc(PGSIZE)) == 0)
     goto bad;
   p->readopen = 1;
   p->writeopen = 1;
