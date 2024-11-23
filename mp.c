@@ -75,6 +75,7 @@ mpconfig(struct mp **pmp)
 {
   struct mpconf *conf;
   struct mp *mp;
+  conf = NULL;  // Initialize to NULL
 
   mp = mpsearch();
   if (mp == NULL || mp->physaddr == NULL) {
@@ -99,7 +100,7 @@ mpconfig(struct mp **pmp)
   conf = (struct mpconf *)(mp->physaddr);
   if (conf == NULL) {
       panic("Failed to map MP configuration structure");
-      return;
+      return 0;
   }
   if(sum((uchar*)conf, conf->length) != 0)
     return 0;
