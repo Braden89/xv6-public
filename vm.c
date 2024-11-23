@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "elf.h"
 #include "buddy.h"
+#include <stddef.h>
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -122,7 +123,7 @@ setupkvm(void)
   struct kmap *k;
 
   if((pgdir = (pde_t*)buddy_alloc(PGSIZE)) == 0)
-    return 0;
+    return NULL;
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
@@ -130,7 +131,7 @@ setupkvm(void)
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {
       freevm(pgdir);
-      return 0;
+      return NULL;
     }
   return pgdir;
 }
