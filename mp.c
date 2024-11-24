@@ -10,12 +10,14 @@
 #include "x86.h"
 #include "mmu.h"
 #include "proc.h"
+#include <stddef.h>
 
 struct cpu cpus[NCPU];
 int ncpu;
 uchar ioapicid;
 
 static uchar
+/*
 sum(uchar *addr, int len)
 {
   int i, sum;
@@ -24,6 +26,18 @@ sum(uchar *addr, int len)
   for(i=0; i<len; i++)
     sum += addr[i];
   return sum;
+}
+*/
+sum(uchar *addr, int len) {
+    if (addr == NULL || len <= 0) {
+        panic("Invalid input to sum");
+        return -1;
+    }
+    int total = 0;
+    for (int i = 0; i < len; i++) {
+        total += addr[i];
+    }
+    return total;
 }
 
 // Look for an MP structure in the len bytes at addr.
@@ -75,7 +89,19 @@ mpconfig(struct mp **pmp)
   struct mpconf *conf;
   struct mp *mp;
 
-  if((mp = mpsearch()) == 0 || mp->physaddr == 0)
+  mp = mpsearch();
+if (mp == NULL || mp->physaddr == 0) {
+    panic("Invalid MP structure or physaddr");
+    return;
+}
+
+conf = (struct mpconf *)(mp->physaddr);
+if (conf == NULL) {
+    panic("Failed to map MP configuration structure");
+    return;
+}
+
+  if(mp == 0 || mp->physaddr == 0)
     return 0;
   conf = (struct mpconf*) P2V((uint) mp->physaddr);
   if(memcmp(conf, "PCMP", 4) != 0)
