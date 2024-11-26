@@ -3,7 +3,6 @@
 #include "param.h"
 #include "memlayout.h"
 #include "buddy.h"
-#include <stddef.h>
 
 struct free_area free_areas[MAX_ORDER];  // Define here
 struct spinlock buddy_lock;              // Define here
@@ -40,7 +39,7 @@ void *buddy_alloc(uint64_t size) {
      }
     int order = get_order(size);
     if (order >= MAX_ORDER)
-        return NULL;
+        return 0;
 
     spin_lock(&buddy_lock);
 
