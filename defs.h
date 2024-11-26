@@ -188,6 +188,7 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 
 #define MAX_CONF_LENGTH 1024  // Example limit
+#define MAX_PHYS_ADDR 0xFFFFFFFF // 4GB limit for 32-bit systems
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

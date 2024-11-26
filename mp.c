@@ -10,7 +10,7 @@
 #include "x86.h"
 #include "mmu.h"
 #include "proc.h"
-#include <stddef.h>
+#include "buddy.h"
 
 struct cpu cpus[NCPU];
 int ncpu;
@@ -28,18 +28,18 @@ sum(uchar *addr, int len)
   return sum;
 }
 */
-sum(uchar *addr, int len) {
-    if (addr == NULL || len <= 0) {
-        panic("Invalid input to sum");
+sum(uchar *addr, int length) {
+    if (addr == 0 || length <= 0) {
+        cprintf("Invalid address or length in sum\n");
         return -1;
     }
+
     int total = 0;
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < length; i++) {
         total += addr[i];
     }
     return total;
 }
-
 // Look for an MP structure in the len bytes at addr.
 static struct mp*
 mpsearch1(uint a, int len)
@@ -86,22 +86,25 @@ mpsearch(void)
 static struct mpconf*
 mpconfig(struct mp **pmp)
 {
-  struct mpconf *conf;
-  struct mp *mp;
+  if (*pmp == 0 || (*pmp)->physaddr == 0 ) {
+        return 0;
+  }
+  
+  struct mp *mp = 0;
+  struct mpconf *conf = (struct mpconf *)(mp->physaddr);
 
   mp = mpsearch();
-if (mp == NULL || mp->physaddr == 0) {
+if (mp == 0 || mp->physaddr == 0) {
     panic("Invalid MP structure or physaddr");
-    return;
+    return 0;
 }
 
-conf = (struct mpconf *)(mp->physaddr);
-if (conf == NULL) {
+if (conf == 0) {
     panic("Failed to map MP configuration structure");
-    return;
+    return 0;
 }
 
-  if(mp == 0 || mp->physaddr == 0)
+  if(mp == 0 || conf->length <= 0 || mp->physaddr == 0)
     return 0;
   conf = (struct mpconf*) P2V((uint) mp->physaddr);
   if(memcmp(conf, "PCMP", 4) != 0)
@@ -114,6 +117,7 @@ if (conf == NULL) {
   return conf;
 }
 
+/*
 void
 mpinit(void)
 {
@@ -128,7 +132,12 @@ mpinit(void)
     panic("Expect to run on an SMP");
   ismp = 1;
   lapic = (uint*)conf->lapicaddr;
-  for(p=(uchar*)(conf+1), e=(uchar*)conf+conf->length; p<e; ){
+
+if (p >= e) {
+    cprintf("Invalid pointer bounds in MP initialization\n");
+    return;
+}
+for (; p < e; p += sizeof(struct mp)) {
     switch(*p){
     case MPPROC:
       proc = (struct mpproc*)p;
@@ -163,3 +172,62 @@ mpinit(void)
     outb(0x23, inb(0x23) | 1);  // Mask external interrupts.
   }
 }
+*/
+
+void mpinit(void) {
+    struct mp *pmp = mpsearch(); // Find the MP structure
+    struct mpconf *conf; // Initialize 
+    uchar *p = 0, *e = 0;
+
+    if (pmp == 0) {
+        cprintf("No MP structure found\n");
+        return;
+    }
+
+    // Validate mp->physaddr before casting
+    if (pmp->physaddr == 0 || (uintptr_t)pmp->physaddr > MAX_PHYS_ADDR) {
+        cprintf("Invalid MP physical address\n");
+        return;
+    }
+
+     conf = mpconfig(&pmp);
+
+    if (conf == 0 || conf->length < sizeof(struct mpconf)) {
+        cprintf("Invalid MP configuration\n");
+        return;
+    }
+
+    // Validate conf version
+    if (conf->version != 1 && conf->version != 4) {
+        cprintf("Unsupported MP version: %d\n", conf->version);
+        return;
+    }
+
+    // Checksum validation
+    if (sum((uchar *)conf, conf->length) != 0) {
+        cprintf("Invalid MP checksum\n");
+        return;
+    }
+
+    lapic = (uint *)conf->lapicaddr;
+
+    // Validate lapic address
+    if (lapic == 0 || (uintptr_t)lapic > MAX_PHYS_ADDR) {
+        cprintf("Invalid LAPIC address\n");
+        return;
+    }
+
+    // Iterate through configuration entries
+    p = (uchar *)(conf + 1);
+    e = (uchar *)conf + conf->length;
+
+    if (p >= e) {
+        cprintf("Invalid MP configuration entries\n");
+        return;
+    }
+
+    for (; p < e; p += sizeof(struct mp)) {
+        // Process each entry
+    }
+}
+
