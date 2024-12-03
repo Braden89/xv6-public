@@ -1,37 +1,38 @@
-#ifndef BUDDY_H
-#define BUDDY_H
+#include "types.h" // Include types for uint64
 
-#include "types.h"
-#include "spinlock.h"
-#include "list.h"
-#include <stdint.h>
-
-#define MAX_ORDER 11 // Maximum block size = 2^(MAX_ORDER-1)
-#define MIN_BLOCK_ORDER 5  // Smallest block size is 32 bytes (2^5 = 32)
-
-struct free_block {
-    struct list_head list;  // Linked list node
-    uint64_t size;          // Size of the block
-    uint64_t magic;         // Magic number for validity check
+// Structure defining a memory block in the free list
+struct block {
+    struct block *next;   // Pointer to the next block in the free list
+    unsigned int size;    // Size of the memory block in bytes
 };
 
-struct free_area {
-    struct list_head free_list;  // Free list for this size
+// Initialize the free list with a memory pool
+void init_free_list(void *base, unsigned int total_size);
+
+// Allocate a memory block of the requested size
+void *allocate_from_free_list(unsigned int size);
+
+// Free a memory block and return it to the free list
+void free_block(void *ptr, unsigned int size);
+
+// Add a memory block to the free list (used internally but exposed if needed)
+void add_to_free_list(struct block *new_block);
+
+
+#define MIN_BLOCK_SIZE 32
+#define MAX_BLOCK_SIZE 4096
+#define NUM_FREE_LISTS 7
+#define USED_MAGIC 0xABCDEF1234567890
+#define FREE_MAGIC 0xDEADBEEFCAFEBABE
+
+struct block_header {
+    uint magic;       // Magic number (used or free)
+    uint size;        // Size of the block
+    struct block_header *next; // Pointer to next block in free list
 };
 
-extern struct free_area free_areas[MAX_ORDER];
+struct free_list {
+    struct block_header *head;
+};
 
-extern struct spinlick buddy_lock;
-
-#define list_first_entry(ptr, type, member) \
-    ((type *)((char *)(ptr)->next - offsetof(type, member)))
-
-void buddyinit(void);
-void *buddy_alloc(uint64_t size);
-void buddy_free(void *addr, uint64_t size);
-void buddy_print(void);
-void buddy_test(void);
-
-
-
-#endif
+extern struct spinlock buddy_lock;

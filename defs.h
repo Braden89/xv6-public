@@ -188,3 +188,11 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+
+// Buddy allocator function prototypes
+void buddyinit(void);
+void *buddy_alloc(uint length);
+void buddy_free(void *ptr);
+void buddy_print(void);
+void buddy_test(void);

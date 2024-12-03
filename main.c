@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "buddy.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
@@ -18,6 +19,10 @@ int
 main(void)
 {
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
+  buddyinit();      // Initialize buddy allocator
+
+  buddy_test();     // Run tests on the buddy allocator
+
   kvmalloc();      // kernel page table
   mpinit();        // detect other processors
   lapicinit();     // interrupt controller
